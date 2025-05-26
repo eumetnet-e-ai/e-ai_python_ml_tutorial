@@ -7,6 +7,8 @@
 \usepackage{microtype}      % Enhances spacing and readability
 \usepackage{amsmath, amssymb}
 \usepackage{caption}
+\usepackage{wrapfig}
+\usepackage{graphicx}
 
 % ---- Sans-Serif Font (Helvetica) ----
 \usepackage{helvet}              % Use Helvetica for a modern sans-serif look
@@ -200,7 +202,12 @@
 
 \newtcblisting{codeonly}[2][]{%
   listing only,
-  listing options={style=pythonstyle, basicstyle=\ttfamily\fontsize{9pt}{13pt}\selectfont},
+  listing options={
+		style=pythonstyle, 
+		basicstyle=\ttfamily\fontsize{9pt}{13pt}\selectfont,
+		tabsize=2,          % Tabs = 2 spaces
+    showtabs=false      % Don't show visible tab markers
+		},
   breakable,
   colback=gray!5,
   colframe=gray!30,

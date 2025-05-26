@@ -47,3 +47,7 @@ build/
 *.tcp
 *.tps
 
+# no mlflow directories
+mlruns/
+mlflow_auth.db
+venv/
