@@ -1,0 +1,61 @@
+stages:
+  - lint
+  - build
+  - test
+
+variables:
+  CONTAINER_TAG: "${CI_COMMIT_SHA}"
+
+lint:
+  stage: lint
+  tags:
+    - sphinx, dkrz
+  script:
+    - export
+    - pip install black
+    - black --check .
+
+build-docker:
+  stage: build
+  tags:
+    - docker-any-image, dkrz
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --reproducible --context $CI_PROJECT_DIR
+        --dockerfile $CI_PROJECT_DIR/Dockerfile
+        --destination $CI_REGISTRY_IMAGE:$CONTAINER_TAG
+  #only: # restrict to main branch
+  #  - main
+
+export-sif:
+  stage: build
+  needs: ["build-docker"]
+  tags:
+    - docker-any-image, dkrz
+  image:
+    name: singularityware/singularity
+    entrypoint: [""]
+  script:
+    - SINGULARITY_DOCKER_USERNAME=$CI_REGISTRY_USER
+        SINGULARITY_DOCKER_PASSWORD=$CI_REGISTRY_PASSWORD
+        singularity pull docker://$CI_REGISTRY_IMAGE:$CONTAINER_TAG
+    - apk add curl
+    - ls -l
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file ${CI_PROJECT_NAME}_${CONTAINER_TAG}.sif ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/images/0.0.1/${CI_PROJECT_NAME}_${CONTAINER_TAG}.sif'
+  #only: # restrict to main branch
+  #  - main
+
+test-image:
+  stage: test
+  tags:
+    - docker-any-image, dkrz
+  image:
+    name: $CI_REGISTRY_IMAGE:$CONTAINER_TAG
+    entrypoint: [""]
+  script:
+    - pytest face.py
+  #only: # restrict to main branch
+  #  - main
