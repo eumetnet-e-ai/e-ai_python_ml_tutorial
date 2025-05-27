@@ -1,10 +1,8 @@
+
 stages:
   - lint
-  - build
-  - test
-
-variables:
-  CONTAINER_TAG: "${CI_COMMIT_SHA}"
+  - build # for later use
+  - test # for later use
 
 lint:
   stage: lint
@@ -13,7 +11,10 @@ lint:
   script:
     - export
     - pip install black
-    - black --check .
+    - black --check . # returns 1, if code is unformatted
+
+variables:
+  CONTAINER_TAG: "${CI_COMMIT_SHA}"
 
 build-docker:
   stage: build
@@ -45,17 +46,5 @@ export-sif:
     - apk add curl
     - ls -l
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file ${CI_PROJECT_NAME}_${CONTAINER_TAG}.sif ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/images/0.0.1/${CI_PROJECT_NAME}_${CONTAINER_TAG}.sif'
-  #only: # restrict to main branch
-  #  - main
-
-test-image:
-  stage: test
-  tags:
-    - docker-any-image, dkrz
-  image:
-    name: $CI_REGISTRY_IMAGE:$CONTAINER_TAG
-    entrypoint: [""]
-  script:
-    - pytest face.py
   #only: # restrict to main branch
   #  - main

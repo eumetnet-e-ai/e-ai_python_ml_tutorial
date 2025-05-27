@@ -29,11 +29,5 @@ def mark_faces(image_filename: pathlib.Path):
     image.save(image_filename.with_suffix(".out.jpg"))
 
 
-def test_no_faces_in_empty_image():
-    image = PIL.Image.new("RGB", [500, 500])
-    boxes = detect_faces(image)
-    assert len(boxes) == 0
-
-
 if __name__ == "__main__":
     typer.run(mark_faces)

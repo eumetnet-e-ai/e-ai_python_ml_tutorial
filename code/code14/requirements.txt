@@ -1,5 +1,4 @@
-#facenet-pytorch
 git+https://github.com/seppe-intelliprove/face-detection-onnx
-typer
 black
+typer
 pytest
