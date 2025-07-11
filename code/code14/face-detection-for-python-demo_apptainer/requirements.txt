@@ -1,0 +1,3 @@
+git+https://github.com/seppe-intelliprove/face-detection-onnx
+black
+typer

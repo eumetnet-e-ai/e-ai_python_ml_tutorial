@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/cuda:12.9.1-cudnn-runtime-ubuntu22.04
+
+%files
+    requirements.txt /opt/dwd/requirements.txt
+    face-gpu.py /opt/dwd/face-gpu.py
+
+%post
+    # Install base packages
+    export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && apt-get install -y \
+        build-essential \
+        git \
+        python3 \
+        python3-venv \
+        wget \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Set up virtual environment
+    python3 -m venv /opt/dwd/venv && \
+        . /opt/dwd/venv/bin/activate && \
+        pip install --upgrade pip && \
+        pip install -r /opt/dwd/requirements.txt && \
+        pip uninstall onnxruntime -y && \
+        pip install onnxruntime-gpu && \
+        pip cache purge
+
+    # cpu pthread affinity fix (https://github.com/microsoft/onnxruntime/issues/10736#issuecomment-2105455784)
+    mkdir -p /opt/pthread-affinity && \
+        cd /opt/pthread-affinity && \
+        wget https://raw.githubusercontent.com/wangsl/pthread-setaffinity/main/pthread-setaffinity.c && \
+        gcc -fPIC -shared -Wl,-soname,libpthread-setaffinity.so -ldl -o libpthread-setaffinity.so pthread-setaffinity.c
+
+    # Change face-gpu.py's permissions
+    chmod 755 /opt/dwd/face-gpu.py
+
+%environment
+    . /opt/dwd/venv/bin/activate
+    export LD_PRELOAD=/opt/pthread-affinity/libpthread-setaffinity.so
+    export LD_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu':$LD_LIBRARY_PATH
+    export CUDA_HOME=/usr/local/cuda
+
+%runscript
+    exec /opt/dwd/face-gpu.py "$@"

@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: python:3.10-slim-bookworm
+
+%files
+    requirements.txt /opt/dwd/requirements.txt
+    face.py /opt/dwd/face.py
+
+%post
+    # Install base packages
+    export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && apt-get install -y \
+        build-essential \
+        git \
+        wget \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Set up virtual environment
+    python3 -m venv /opt/dwd/venv && \
+        . /opt/dwd/venv/bin/activate && \
+        pip install --upgrade pip && \
+        pip install -r /opt/dwd/requirements.txt && \
+        pip cache purge
+
+    # cpu pthread affinity fix (https://github.com/microsoft/onnxruntime/issues/10736#issuecomment-2105455784)
+    mkdir -p /opt/pthread-affinity && \
+        cd /opt/pthread-affinity && \
+        wget https://raw.githubusercontent.com/wangsl/pthread-setaffinity/main/pthread-setaffinity.c && \
+        gcc -fPIC -shared -Wl,-soname,libpthread-setaffinity.so -ldl -o libpthread-setaffinity.so pthread-setaffinity.c
+
+    # Change face.py's permissions
+    chmod 755 /opt/dwd/face.py
+
+%environment
+    . /opt/dwd/venv/bin/activate
+    export LD_PRELOAD=/opt/pthread-affinity/libpthread-setaffinity.so
+
+%runscript
+    exec /opt/dwd/face.py "$@"
