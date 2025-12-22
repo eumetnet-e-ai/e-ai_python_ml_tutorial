@@ -51,3 +51,20 @@ build/
 mlruns/
 mlflow_auth.db
 venv/
+
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime / outputs
+output.txt
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Optional: generated images (wenn nicht versioniert)
+# images/
